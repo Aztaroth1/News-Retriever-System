@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Tech Innovation Drives Market Growth",
+    "description": "Technology sector shows remarkable performance this quarter...",
+    "full_content": "Technology sector shows remarkable performance this quarter with significant innovations in artificial intelligence and machine learning. Companies are investing heavily in research and development to stay competitive in the rapidly evolving digital landscape.",
+    "source": "example_tech_news",
+    "content_type": "web",
+    "published": "2025-01-15T10:30:00",
+    "link": "https://example.com/tech-growth"
+  },
+  {
+    "title": "Environmental Policies Show Positive Impact",
+    "description": "New environmental regulations are yielding measurable results...",
+    "full_content": "New environmental regulations are yielding measurable results across multiple sectors. Air quality improvements have been documented in major cities, while renewable energy adoption continues to accelerate nationwide.",
+    "source": "example_env_news",
+    "content_type": "rss",
+    "published": "2025-01-14T15:45:00",
+    "link": "https://example.com/env-impact"
+  }
+]
