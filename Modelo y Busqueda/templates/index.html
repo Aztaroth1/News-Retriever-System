@@ -917,27 +917,36 @@
         }
 
         function updatePerformanceMetrics(metrics) {
-            const performanceMetrics = document.getElementById('performanceMetrics');
-            
-            performanceMetrics.innerHTML = `
-                <div class="metric-card">
-                    <div class="value">${(metrics.accuracy || 0).toFixed(3)}</div>
-                    <div class="label">Accuracy</div>
-                </div>
-                <div class="metric-card">
-                    <div class="value">${(metrics.precision || 0).toFixed(3)}</div>
-                    <div class="label">Precision</div>
-                </div>
-                <div class="metric-card">
-                    <div class="value">${(metrics.recall || 0).toFixed(3)}</div>
-                    <div class="label">Recall</div>
-                </div>
-                <div class="metric-card">
-                    <div class="value">${(metrics.f1_score || 0).toFixed(3)}</div>
-                    <div class="label">F1 Score</div>
-                </div>
-            `;
-        }
+    const performanceMetrics = document.getElementById('performanceMetrics');
+    
+    performanceMetrics.innerHTML = `
+        <div class="metric-card">
+            <div class="value">${(metrics.accuracy || 0).toFixed(3)}</div>
+            <div class="label">Accuracy</div>
+        </div>
+        <div class="metric-card">
+            <div class="value">${(metrics.precision || 0).toFixed(3)}</div>
+            <div class="label">Precision</div>
+        </div>
+        <div class="metric-card">
+            <div class="value">${(metrics.recall || 0).toFixed(3)}</div>
+            <div class="label">Recall</div>
+        </div>
+        <div class="metric-card">
+            <div class="value">${(metrics.f1_score || 0).toFixed(3)}</div>
+            <div class="label">F1 Score</div>
+        </div>
+        <div class="metric-card">
+            <div class="value">${(metrics.map_score || 0).toFixed(3)}</div>
+            <div class="label">MAP</div>
+        </div>
+        <div class="metric-card">
+            <div class="value">${(metrics.ndcg_score || 0).toFixed(3)}</div>
+            <div class="label">nDCG</div>
+        </div>
+    `;
+}
+
 
         function displayDetailedMetrics(metrics) {
             const detailedMetrics = document.getElementById('detailedMetrics');

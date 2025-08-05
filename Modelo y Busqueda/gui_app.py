@@ -88,31 +88,24 @@ def search():
     except Exception as e:
         return jsonify({'error': f'Error en la búsqueda: {str(e)}'}), 500
 
-@app.route('/rate_result', methods=['POST'])
-def rate_result():
-    """Endpoint para recibir la calificación del usuario"""
+
+@app.route('/rate-news', methods=['POST'])
+def rate_news():
     try:
         data = request.get_json()
-        query = data.get('query')
+        news_id = data.get('news_id')
         rating = data.get('rating')
-        predicted_category = data.get('predicted_category')
-        
-        if not query or not rating or not predicted_category:
-            return jsonify({'error': 'Datos de calificación incompletos'}), 400
 
-        # Guardar la calificación en un archivo CSV para su análisis
+        # Aquí puedes guardar el rating en tu archivo CSV o base de datos
         with open(feedback_csv_path, 'a', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
-            writer.writerow([query, predicted_category, rating])
-            
-        print(f"⭐ Feedback recibido: Consulta='{query}', Categoría='{predicted_category}', Calificación={rating}")
-        
+            writer.writerow([news_id, rating])
+
         return jsonify({'success': True, 'message': 'Calificación enviada correctamente.'}), 200
-    
     except Exception as e:
         return jsonify({'error': f'Error al procesar la calificación: {str(e)}'}), 500
+    
 
-# (El resto de tus endpoints '/evaluate', '/stats' siguen igual)
 @app.route('/evaluate', methods=['GET'])
 def evaluate_model():
     """Endpoint para evaluar el modelo"""
