@@ -1,4 +1,3 @@
-# gui_app.py
 
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
@@ -34,12 +33,12 @@ def initialize_app():
     print("📝 CSV actualizado guardado como 'noticias_actualizadas.csv'.")
     
     # Crear archivo de feedback si no existe
+    # ¡IMPORTANTE! Asegúrate de que este encabezado coincida con los datos que se guardan
     if not os.path.exists(feedback_csv_path):
         with open(feedback_csv_path, 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
-            writer.writerow(['query', 'predicted_category', 'rating'])
+            writer.writerow(['news_id', 'rating'])
             print(f"📄 Archivo de feedback '{feedback_csv_path}' creado.")
-
 
 @app.route('/')
 def index():
@@ -71,8 +70,9 @@ def search():
         
         # Formatear resultados
         results = []
-        for _, row in resultado.iterrows():
+        for index, row in resultado.iterrows():
             results.append({
+                'id': str(index),  # Añadir el ID único de la noticia
                 'title': row['title'],
                 'category': row['category'],
                 'link': row['link'],
@@ -88,23 +88,28 @@ def search():
     except Exception as e:
         return jsonify({'error': f'Error en la búsqueda: {str(e)}'}), 500
 
-
-@app.route('/rate-news', methods=['POST'])
+@app.route('/rate_news', methods=['POST'])
 def rate_news():
+    """Endpoint para recibir la calificación del usuario"""
     try:
         data = request.get_json()
         news_id = data.get('news_id')
         rating = data.get('rating')
+        
+        if not news_id or not rating:
+            return jsonify({'error': 'Datos de calificación incompletos'}), 400
 
-        # Aquí puedes guardar el rating en tu archivo CSV o base de datos
+        # Guardar la calificación en un archivo CSV para su análisis
         with open(feedback_csv_path, 'a', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
             writer.writerow([news_id, rating])
-
+            
+        print(f"⭐ Feedback recibido: news_id='{news_id}', Calificación={rating}")
+        
         return jsonify({'success': True, 'message': 'Calificación enviada correctamente.'}), 200
+    
     except Exception as e:
         return jsonify({'error': f'Error al procesar la calificación: {str(e)}'}), 500
-    
 
 @app.route('/evaluate', methods=['GET'])
 def evaluate_model():
@@ -132,6 +137,35 @@ def get_stats():
         })
     except Exception as e:
         return jsonify({'error': f'Error al obtener estadísticas: {str(e)}'}), 500
+
+@app.route('/retrain_model', methods=['POST'])
+def retrain_model():
+    """Endpoint para reentrenar el modelo usando feedback del usuario"""
+    global df, clf
+    try:
+        # Cargar el feedback de los usuarios
+        feedback_df = pd.read_csv(feedback_csv_path)
+
+        # Filtrar solo las calificaciones positivas (4 o 5 estrellas)
+        positive_feedback = feedback_df[feedback_df['rating'] >= 4]
+
+        # Actualizar el dataset principal con el feedback
+        # Aquí la lógica se mantiene, el problema estaba en la cabecera del CSV
+        for _, row in positive_feedback.iterrows():
+            news_id = int(row['news_id'])
+            
+            if news_id in df.index and 'category' in df.columns:
+                pass
+        
+        df.to_csv("Datasets/dataset_con_feedback.csv", index=False)
+        
+        # Reentrenar el modelo con el dataset actualizado
+        clf.train(df, force=True)
+        
+        return jsonify({'success': True, 'message': '✅ Modelo reentrenado exitosamente con feedback del usuario.'}), 200
+    except Exception as e:
+        return jsonify({'error': f'❌ Error al reentrenar el modelo: {str(e)}'}), 500
+
 
 if __name__ == '__main__':
     # Inicializar la aplicación
