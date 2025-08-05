@@ -1125,7 +1125,7 @@ function highlightStars(container, rating) {
 // Nueva función para enviar la calificación al backend
 async function sendRatingToServer(newsId, rating, container) {
     try {
-        const response = await fetch('/rate-news', {
+        const response = await fetch('/rate_news', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
