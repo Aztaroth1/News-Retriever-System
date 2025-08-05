@@ -1,73 +1,148 @@
-import tkinter as tk
-from tkinter import messagebox
-import webbrowser
+# gui_app.py
+
+from flask import Flask, render_template, request, jsonify
+import pandas as pd
 from data_loader import load_dataset
 from text_classifier import NewsClassifier
-import pandas as pd
+import os
+import csv
 
-# === Cargar datos desde CSV ===
+app = Flask(__name__)
+
+# === Configuración inicial ===
 csv_path = "Datasets/integrated_news_dataset.csv"
-df = load_dataset(csv_path)
+feedback_csv_path = "Datasets/user_feedback.csv" # Nuevo archivo para feedback
+df = None
+clf = None
 
-# === Inicializar y cargar/entrenar modelo ===
-clf = NewsClassifier()
+def initialize_app():
+    """Inicializar datos y modelo"""
+    global df, clf
+    
+    # Cargar datos
+    df = load_dataset(csv_path)
+    
+    # Inicializar clasificador
+    clf = NewsClassifier()
+    clf.train(df)
+    
+    # Actualizar categorías desconocidas
+    df = clf.update_unknown_categories(df)
+    
+    # Guardar dataset actualizado
+    df.to_csv("Datasets/noticias_actualizadas.csv", index=False)
+    print("📝 CSV actualizado guardado como 'noticias_actualizadas.csv'.")
+    
+    # Crear archivo de feedback si no existe
+    if not os.path.exists(feedback_csv_path):
+        with open(feedback_csv_path, 'w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(['query', 'predicted_category', 'rating'])
+            print(f"📄 Archivo de feedback '{feedback_csv_path}' creado.")
 
-# Entrenar solo si el modelo no fue cargado (ya manejado dentro de la clase)
-clf.train(df)
 
-# Actualizar categorías "unknown"
-df = clf.update_unknown_categories(df)
+@app.route('/')
+def index():
+    """Página principal"""
+    return render_template('index.html')
 
-# === Guardar dataset actualizado con predicciones ===
-df.to_csv("Datasets/noticias_actualizadas.csv", index=False)
-print("📝 CSV actualizado guardado como 'noticias_actualizadas.csv'.")
+@app.route('/search', methods=['POST'])
+def search():
+    """Endpoint para búsqueda de noticias"""
+    try:
+        data = request.get_json()
+        query = data.get('query', '').strip()
+        
+        if not query:
+            return jsonify({'error': 'Por favor ingresa una consulta'}), 400
+        
+        # Predecir categoría
+        predicted_category = clf.predict(query)
+        
+        # Buscar noticias de la categoría predicha
+        resultado = df[df['category'] == predicted_category].head(5)
+        
+        if resultado.empty:
+            return jsonify({
+                'results': [],
+                'predicted_category': predicted_category,
+                'message': 'No se encontraron resultados para esta categoría.'
+            })
+        
+        # Formatear resultados
+        results = []
+        for _, row in resultado.iterrows():
+            results.append({
+                'title': row['title'],
+                'category': row['category'],
+                'link': row['link'],
+                'text': row['text'][:200] + '...' if len(row['text']) > 200 else row['text']
+            })
+        
+        return jsonify({
+            'results': results,
+            'predicted_category': predicted_category,
+            'total_found': len(resultado)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Error en la búsqueda: {str(e)}'}), 500
 
-# === Función para crear links clicables en la interfaz ===
-def crear_link(frame, texto, url):
-    link = tk.Label(frame, text=texto, fg="purple", cursor="hand2", font=('Arial', 10, 'underline'))
-    link.bind("<Button-1>", lambda e: webbrowser.open_new(url))
-    link.pack(anchor="w")
+@app.route('/rate_result', methods=['POST'])
+def rate_result():
+    """Endpoint para recibir la calificación del usuario"""
+    try:
+        data = request.get_json()
+        query = data.get('query')
+        rating = data.get('rating')
+        predicted_category = data.get('predicted_category')
+        
+        if not query or not rating or not predicted_category:
+            return jsonify({'error': 'Datos de calificación incompletos'}), 400
 
-# === Función principal para búsqueda ===
-def buscar():
-    query = entry.get()
-    if not query:
-        messagebox.showwarning("Entrada Vacía", "Por favor ingresa una consulta")
-        return
+        # Guardar la calificación en un archivo CSV para su análisis
+        with open(feedback_csv_path, 'a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow([query, predicted_category, rating])
+            
+        print(f"⭐ Feedback recibido: Consulta='{query}', Categoría='{predicted_category}', Calificación={rating}")
+        
+        return jsonify({'success': True, 'message': 'Calificación enviada correctamente.'}), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Error al procesar la calificación: {str(e)}'}), 500
 
-    pred = clf.predict(query)
-    resultado = df[df['category'] == pred].head(5)
+# (El resto de tus endpoints '/evaluate', '/stats' siguen igual)
+@app.route('/evaluate', methods=['GET'])
+def evaluate_model():
+    """Endpoint para evaluar el modelo"""
+    try:
+        metrics = clf.evaluate(df)
+        return jsonify({
+            'success': True,
+            'metrics': metrics
+        })
+    except Exception as e:
+        return jsonify({'error': f'Error al evaluar el modelo: {str(e)}'}), 500
 
-    # Limpiar resultados anteriores
-    for widget in result_frame.winfo_children():
-        widget.destroy()
+@app.route('/stats')
+def get_stats():
+    """Obtener estadísticas del dataset"""
+    try:
+        total_news = len(df)
+        categories = df['category'].value_counts().to_dict()
+        
+        return jsonify({
+            'total_news': total_news,
+            'categories': categories,
+            'total_categories': len(categories)
+        })
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener estadísticas: {str(e)}'}), 500
 
-    if resultado.empty:
-        tk.Label(result_frame, text="No se encontraron resultados.", fg="red").pack()
-        return
-
-    for _, row in resultado.iterrows():
-        tk.Label(result_frame, text=f"Título: {row['title']}", font=("Arial", 12, "bold")).pack(anchor="w")
-        tk.Label(result_frame, text=f"Categoría: {row['category']}", font=("Arial", 10)).pack(anchor="w")
-        crear_link(result_frame, row['link'], row['link'])
-        tk.Label(result_frame, text="").pack()  # Espacio entre resultados
-
-# === Configurar ventana principal ===
-root = tk.Tk()
-root.title("Buscador de Noticias")
-root.geometry("800x600")
-
-# Entrada
-tk.Label(root, text="Escribe una consulta:", font=("Arial", 12)).pack(pady=5)
-entry = tk.Entry(root, width=80, font=("Arial", 12))
-entry.pack(pady=5)
-
-# Botón buscar
-tk.Button(root, text="Buscar", command=buscar, font=("Arial", 12)).pack(pady=10)
-
-# Área de resultados
-result_frame = tk.Frame(root)
-result_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-# Ejecutar aplicación
-root.mainloop()
+if __name__ == '__main__':
+    # Inicializar la aplicación
+    initialize_app()
+    
+    # Ejecutar servidor
+    app.run(debug=True, host='0.0.0.0', port=5000)

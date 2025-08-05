@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+Datasets/integrated_news_dataset.csv
+Datasets/crawled_news.json
+Datasets/noticias_actualizadas.csv
+Datasets/user_feedback.csv

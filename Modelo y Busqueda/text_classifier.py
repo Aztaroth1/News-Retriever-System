@@ -6,6 +6,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from sklearn.metrics import precision_score, recall_score, f1_score, ndcg_score, average_precision_score
+from sklearn.preprocessing import label_binarize
+
 
 class NewsClassifier:
     def __init__(self, model_path="Modelos_Entrenados/modelo_entrenado.pkl"):
@@ -69,3 +72,35 @@ class NewsClassifier:
         print(f"📝 Actualizando {mask.sum()} noticias con categoría 'unknown'...")
         df.loc[mask, 'category'] = df.loc[mask, 'text'].apply(lambda x: self.predict(x))
         return df
+    
+    def evaluate(self, df: pd.DataFrame):
+        """
+        Retorna métricas de evaluación (Precisión, Recall, F1, MAP, nDCG) para mostrar en la interfaz.
+        """
+        known_df = df[df['category'].notna() & (df['category'] != "unknown")]
+        X = known_df['text']
+        y = known_df['category']
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42
+        )
+
+        y_pred = self.model.predict(X_test)
+        y_score = self.model.predict_proba(X_test)
+
+        labels = sorted(list(set(y_test)))  # etiquetas conocidas
+        y_test_bin = label_binarize(y_test, classes=labels)
+
+        precision = precision_score(y_test, y_pred, average='macro', zero_division=0)
+        recall = recall_score(y_test, y_pred, average='macro', zero_division=0)
+        f1 = f1_score(y_test, y_pred, average='macro', zero_division=0)
+        map_score = average_precision_score(y_test_bin, y_score, average='macro')
+        ndcg = ndcg_score(y_test_bin, y_score)
+
+        return {
+            "Precisión": round(precision, 4),
+            "Recall": round(recall, 4),
+            "F1 Score": round(f1, 4),
+            "MAP": round(map_score, 4),
+            "nDCG": round(ndcg, 4)
+        }

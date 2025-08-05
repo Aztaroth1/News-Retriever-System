@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador Inteligente de Noticias</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* (Tus estilos existentes) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            font-weight: 400;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: #6c757d;
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #495057;
+            box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.1);
+        }
+
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #495057;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #343a40;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: white;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+        }
+
+        .btn-outline:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+        }
+
+        .nav-tab {
+            padding: 16px 24px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: #6c757d;
+            border-right: 1px solid #dee2e6;
+        }
+
+        .nav-tab:last-child {
+            border-right: none;
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #495057;
+            border-bottom: 2px solid #495057;
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #495057;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: none;
+            border: 1px solid #e9ecef;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .news-item {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+            background: #fafbfc;
+        }
+
+        .news-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            border-color: #adb5bd;
+        }
+
+        .news-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .news-category {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .news-text {
+            color: #6c757d;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .news-link {
+            color: #495057;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .news-link:hover {
+            color: #212529;
+            transform: translateX(3px);
+        }
+
+        .metrics-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 1px solid #dee2e6;
+            animation: modalAppear 0.3s ease-out;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+
+        .metric-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .dashboard-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .dashboard-card h3 {
+            color: #495057;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .metric-card .value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+
+        .metric-card .label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .ranking-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+
+        .ranking-position {
+            background: #495057;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .ranking-name {
+            flex: 1;
+            margin-left: 12px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .ranking-value {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #495057;
+            transition: width 0.3s ease;
+        }
+
+        .stats-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes modalAppear {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .search-container { flex-direction: column; }
+            .controls { flex-direction: column; }
+            .modal-content { margin: 5% auto; padding: 20px; }
+        }
+
+        /* NUEVOS ESTILOS PARA LA CALIFICACIÓN */
+        .rating-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+        }
+
+        .rating-container h4 {
+            margin-bottom: 15px;
+            color: #495057;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .rating-stars {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            font-size: 2rem;
+            color: #dee2e6; /* Color por defecto de las estrellas */
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        
+        .rating-stars .star {
+            transition: color 0.2s ease;
+        }
+
+        .rating-stars .star.selected {
+            color: #ffc107; /* Color de las estrellas seleccionadas */
+        }
+        
+        .rating-stars:hover .star {
+            color: #ffc107;
+        }
+
+        .rating-stars .star:hover ~ .star {
+            color: #dee2e6;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-search"></i> News Search System</h1>
+            <p>Intelligent news classification and search engine</p>
+        </div>
+
+        <div class="stats-section" id="statsSection">
+            </div>
+
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" 
+                       placeholder="Search for news... (e.g., technology, sports, politics)">
+                <button class="btn btn-primary" onclick="searchNews()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-outline" onclick="loadStats()">
+                    <i class="fas fa-sync-alt"></i> Refresh Stats
+                </button>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('results')">
+                <i class="fas fa-list"></i> Search Results
+            </button>
+            <button class="nav-tab" onclick="showTab('dashboard')">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </button>
+            <button class="nav-tab" onclick="showTab('metrics')">
+                <i class="fas fa-chart-bar"></i> Model Metrics
+            </button>
+        </div>
+
+        <div id="results-tab" class="tab-content active">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                Processing query...
+            </div>
+
+            <div class="results-section" id="resultsSection">
+                </div>
+        </div>
+
+        <div id="dashboard-tab" class="tab-content">
+            <div class="dashboard-section">
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-chart-pie"></i> Model Performance</h3>
+                        <div class="metric-grid" id="performanceMetrics">
+                            </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <h3><i class="fas fa-trophy"></i> Category Ranking</h3>
+                        <ul class="ranking-list" id="categoryRanking">
+                            </ul>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-database"></i> Dataset Overview</h3>
+                    <div id="datasetOverview">
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="metrics-tab" class="tab-content">
+            <div class="dashboard-section">
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-chart-bar"></i> Detailed Model Metrics</h3>
+                    <div id="detailedMetrics">
+                        </div>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button class="btn btn-primary" onclick="loadModelMetrics()">
+                            <i class="fas fa-refresh"></i> Evaluate Model
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="metricsModal" class="metrics-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Model Metrics</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="metricsContent">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'results';
+        let currentStats = null;
+        let currentMetrics = null;
+        let currentSearchQuery = ''; // Variable para guardar la consulta actual
+        let currentPredictedCategory = ''; // Variable para guardar la categoría predicha
+
+        // Cargar estadísticas al inicio
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadModelMetrics();
+            
+            // Enter key para buscar
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchNews();
+                }
+            });
+        });
+
+        function showTab(tabName) {
+            // Ocultar todas las tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remover active de todos los botones
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar tab seleccionada
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            currentTab = tabName;
+            
+            // Cargar datos específicos de la tab
+            if (tabName === 'dashboard') {
+                loadDashboard();
+            } else if (tabName === 'metrics') {
+                loadModelMetrics();
+            }
+        }
+
+        async function searchNews() {
+            const query = document.getElementById('searchInput').value.trim();
+            
+            if (!query) {
+                showError('Please enter a search query');
+                return;
+            }
+
+            // Guardar la consulta actual para el feedback
+            currentSearchQuery = query;
+
+            // Cambiar a tab de resultados
+            showTab('results');
+            showLoading(true);
+            hideResults();
+
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Search error occurred');
+                }
+
+                // Guardar la categoría predicha
+                currentPredictedCategory = data.predicted_category;
+                showResults(data);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function loadModelMetrics() {
+            try {
+                const response = await fetch('/evaluate');
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error evaluating model');
+                }
+
+                currentMetrics = data.metrics;
+                displayDetailedMetrics(data.metrics);
+                updatePerformanceMetrics(data.metrics);
+            } catch (error) {
+                console.error('Error loading model metrics:', error);
+                showMetricsError('Error loading model metrics');
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/stats');
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error loading statistics');
+                }
+
+                currentStats = data;
+                displayStats(data);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                showStatsError('Error loading statistics');
+            }
+        }
+
+        async function loadDashboard() {
+    try {
+        // Cargar datos del dashboard
+        if (currentStats) {
+            updateCategoryRanking(currentStats);
+            updateDatasetOverview(currentStats);
+        }
+        
+        if (currentMetrics) {
+            updatePerformanceMetrics(currentMetrics);
+        }
+        
+        // Si no tenemos datos, cargarlos
+        if (!currentStats) await loadStats();
+        
+        // Llamar a loadModelMetrics para asegurar que currentMetrics tiene valores
+        // Esto es lo que faltaba en tu código
+        if (!currentMetrics) {
+             await loadModelMetrics();
+        }
+        
+        // Volver a llamar a las funciones para que se rendericen los datos
+        updateCategoryRanking(currentStats);
+        updateDatasetOverview(currentStats);
+        updatePerformanceMetrics(currentMetrics);
+        
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
+    }
+}
+
+        function displayStats(data) {
+            const statsSection = document.getElementById('statsSection');
+            const topCategories = Object.entries(data.categories || {})
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3);
+
+            statsSection.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${(data.total_news || 0).toLocaleString()}</div>
+                        <div class="stat-label">Total News</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${data.total_categories || 0}</div>
+                        <div class="stat-label">Categories</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${topCategories[0] ? topCategories[0][0] : 'N/A'}</div>
+                        <div class="stat-label">Top Category</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateCategoryRanking(data) {
+            const categoryRanking = document.getElementById('categoryRanking');
+            const categories = Object.entries(data.categories || {})
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+
+            let html = '';
+            categories.forEach(([category, count], index) => {
+                html += `
+                    <li class="ranking-item">
+                        <span class="ranking-position">${index + 1}</span>
+                        <span class="ranking-name">${category}</span>
+                        <span class="ranking-value">${count}</span>
+                    </li>
+                `;
+            });
+
+            categoryRanking.innerHTML = html;
+        }
+
+        function updateDatasetOverview(data) {
+            const datasetOverview = document.getElementById('datasetOverview');
+            const avgPerCategory = data.total_categories > 0 ? 
+                Math.round(data.total_news / data.total_categories) : 0;
+
+            datasetOverview.innerHTML = `
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="value">${(data.total_news || 0).toLocaleString()}</div>
+                        <div class="label">Total Articles</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value">${data.total_categories || 0}</div>
+                        <div class="label">Categories</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="value">${avgPerCategory}</div>
+                        <div class="label">Avg per Category</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updatePerformanceMetrics(metrics) {
+            const performanceMetrics = document.getElementById('performanceMetrics');
+            
+            performanceMetrics.innerHTML = `
+                <div class="metric-card">
+                    <div class="value">${(metrics.accuracy || 0).toFixed(3)}</div>
+                    <div class="label">Accuracy</div>
+                </div>
+                <div class="metric-card">
+                    <div class="value">${(metrics.precision || 0).toFixed(3)}</div>
+                    <div class="label">Precision</div>
+                </div>
+                <div class="metric-card">
+                    <div class="value">${(metrics.recall || 0).toFixed(3)}</div>
+                    <div class="label">Recall</div>
+                </div>
+                <div class="metric-card">
+                    <div class="value">${(metrics.f1_score || 0).toFixed(3)}</div>
+                    <div class="label">F1 Score</div>
+                </div>
+            `;
+        }
+
+        function displayDetailedMetrics(metrics) {
+            const detailedMetrics = document.getElementById('detailedMetrics');
+            let html = '';
+
+            Object.entries(metrics).forEach(([key, value]) => {
+                const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const displayValue = typeof value === 'number' ? value.toFixed(4) : value;
+                
+                html += `
+                    <div class="metric-item">
+                        <span class="metric-name">${displayName}</span>
+                        <span class="metric-value">${displayValue}</span>
+                    </div>
+                `;
+            });
+
+            detailedMetrics.innerHTML = html;
+        }
+
+        function showResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            
+            if (data.results.length === 0) {
+                resultsSection.innerHTML = `
+                    <div class="category-badge">Predicted Category: ${data.predicted_category}</div>
+                    <p style="text-align: center; color: #6c757d; font-size: 1.1rem;">
+                        <i class="fas fa-search"></i> ${data.message}
+                    </p>
+                `;
+            } else {
+                let html = `
+                    <div class="category-badge">
+                        <i class="fas fa-tag"></i> Predicted Category: ${data.predicted_category}
+                    </div>
+                    <div style="margin-bottom: 25px;">
+                        <strong>${data.total_found}</strong> news articles found
+                    </div>
+                `;
+
+                data.results.forEach(item => {
+                    html += `
+                        <div class="news-item">
+                            <h3 class="news-title">${item.title}</h3>
+                            <span class="news-category">${item.category}</span>
+                            <p class="news-text">${item.text}</p>
+                            <a href="${item.link}" target="_blank" class="news-link">
+                                Read more <i class="fas fa-external-link-alt"></i>
+                            </a>
+
+                            <div class="rating-container">
+                <h4>Rate this result:</h4>
+                <div class="rating-stars" data-news-id="${item.id}"> <i class="far fa-star star" data-rating="1"></i>
+                    <i class="far fa-star star" data-rating="2"></i>
+                    <i class="far fa-star star" data-rating="3"></i>
+                    <i class="far fa-star star" data-rating="4"></i>
+                    <i class="far fa-star star" data-rating="5"></i>
+                </div>
+            </div>
+                        </div>
+                    `;
+                });
+                
+
+                resultsSection.innerHTML = html;
+                setupRatingStars(); // Inicializar el manejo de eventos de las estrellas
+            }
+            resultsSection.style.display = 'block';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function hideResults() {
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+
+        function showError(message) {
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.style.display = 'block';
+            resultsSection.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        // NUEVAS FUNCIONES PARA EL SISTEMA DE RATING
+// ---
+
+// Esta función inicializa el sistema de calificación para CADA contenedor de estrellas
+function setupRatingStars() {
+    // Selecciona todos los contenedores de estrellas, uno por cada noticia
+    const allStarContainers = document.querySelectorAll('.rating-stars');
+
+    // Itera sobre cada contenedor para asignarle sus eventos
+    allStarContainers.forEach(container => {
+        const stars = container.querySelectorAll('.star');
+        const newsId = container.dataset.newsId;
+        
+        let selectedRating = 0;
+        
+        // Manejar el evento de clic
+        stars.forEach(star => {
+            star.addEventListener('click', (event) => {
+                selectedRating = parseInt(event.target.dataset.rating);
+                sendRatingToServer(newsId, selectedRating, container);
+                highlightStars(container, selectedRating);
+            });
+        });
+
+        // Manejar el efecto hover
+        container.addEventListener('mouseover', (event) => {
+            if (event.target.classList.contains('star')) {
+                const hoverRating = parseInt(event.target.dataset.rating);
+                highlightStars(container, hoverRating);
+            }
+        });
+
+        container.addEventListener('mouseout', () => {
+            highlightStars(container, selectedRating);
+        });
+    });
+}
+
+// Resalta las estrellas según el rating
+function highlightStars(container, rating) {
+    const stars = container.querySelectorAll('.star');
+    stars.forEach(star => {
+        const starRating = parseInt(star.dataset.rating);
+        if (starRating <= rating) {
+            star.classList.remove('far'); // Quita el borde
+            star.classList.add('fas', 'selected'); // Añade el relleno y la clase 'selected'
+        } else {
+            star.classList.remove('fas', 'selected');
+            star.classList.add('far');
+        }
+    });
+}
+
+// Nueva función para enviar la calificación al backend
+async function sendRatingToServer(newsId, rating, container) {
+    try {
+        const response = await fetch('/rate-news', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ news_id: newsId, rating: rating })
+        });
+        
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al enviar la calificación');
+        }
+        
+        // Deshabilita el rating para evitar múltiples envíos
+        container.style.pointerEvents = 'none';
+
+        // Muestra un mensaje de éxito
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'success-message';
+        messageDiv.innerText = `¡Gracias por tu calificación de ${rating} estrellas! 🙏`;
+        container.parentNode.appendChild(messageDiv);
+        
+    } catch (error) {
+        console.error('Error enviando calificación:', error);
+        
+        // Muestra un mensaje de error
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'error-message';
+        messageDiv.innerText = `Hubo un error: ${error.message}`;
+        container.parentNode.appendChild(messageDiv);
+    }
+}
+    </script>
+</body>
+</html>
