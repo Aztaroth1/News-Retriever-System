@@ -6,6 +6,9 @@ Para ello, activalo de la siguiente manera
 - source env_proyect/bin/activate
 NOTA: Procura tener instalado venv para usaro el env. Caso contrario usa el comando:
 - pip install venv
+Y se lo has instalado procura crear el entorno de la siguiente manera:
+- python3 -m venv env_proyect
+
 
 ##Requerimientos
 Los requerimientos, estan ubicados en el txt requirements.txt, para instalarlos usa el comando
