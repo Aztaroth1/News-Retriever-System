@@ -18,7 +18,7 @@ Y se lo has instalado procura crear el entorno de la siguiente manera:
 ## Requerimientos
 Los requerimientos, estan ubicados en el txt requirements.txt, para instalarlos usa el comando
 
-- pip install -r requeriments.txt
+- pip install -r requirements.txt
 
 ## Adicional
 Este proyecto se esta trabajando mediante notebook, por lo cual se usa Jupyter Notebook.
