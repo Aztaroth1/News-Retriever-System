@@ -601,8 +601,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-search"></i> News Search System</h1>
-            <p>Intelligent news classification and search engine</p>
+            <h1><i class="fas fa-search"></i> Sistema de Búsqueda de Noticias</h1>
+            <p>Clasificación inteligente y motor de búsqueda de noticias</p>
         </div>
 
         <div class="stats-section" id="statsSection">
@@ -611,35 +611,35 @@
         <div class="search-section">
             <div class="search-container">
                 <input type="text" id="searchInput" class="search-input" 
-                       placeholder="Search for news... (e.g., technology, sports, politics)">
+                       placeholder="Buscar noticias... (ej.: tecnología, deportes, política)">
                 <button class="btn btn-primary" onclick="searchNews()">
-                    <i class="fas fa-search"></i> Search
+                    <i class="fas fa-search"></i> Buscar
                 </button>
             </div>
             
             <div class="controls">
                 <button class="btn btn-outline" onclick="loadStats()">
-                    <i class="fas fa-sync-alt"></i> Refresh Stats
+                    <i class="fas fa-sync-alt"></i> Actualizar estadísticas
                 </button>
             </div>
         </div>
 
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="showTab('results')">
-                <i class="fas fa-list"></i> Search Results
+                <i class="fas fa-list"></i> Resultados
             </button>
             <button class="nav-tab" onclick="showTab('dashboard')">
-                <i class="fas fa-chart-line"></i> Dashboard
+                <i class="fas fa-chart-line"></i> Panel
             </button>
             <button class="nav-tab" onclick="showTab('metrics')">
-                <i class="fas fa-chart-bar"></i> Model Metrics
+                <i class="fas fa-chart-bar"></i> Métricas del modelo
             </button>
         </div>
 
         <div id="results-tab" class="tab-content active">
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                Processing query...
+                Procesando consulta...
             </div>
 
             <div class="results-section" id="resultsSection">
@@ -650,20 +650,20 @@
             <div class="dashboard-section">
                 <div class="dashboard-grid">
                     <div class="dashboard-card">
-                        <h3><i class="fas fa-chart-pie"></i> Model Performance</h3>
+                        <h3><i class="fas fa-chart-pie"></i> Rendimiento del modelo</h3>
                         <div class="metric-grid" id="performanceMetrics">
                             </div>
                     </div>
                     
                     <div class="dashboard-card">
-                        <h3><i class="fas fa-trophy"></i> Category Ranking</h3>
+                        <h3><i class="fas fa-trophy"></i> Clasificación por categoria</h3>
                         <ul class="ranking-list" id="categoryRanking">
                             </ul>
                     </div>
                 </div>
                 
                 <div class="dashboard-card">
-                    <h3><i class="fas fa-database"></i> Dataset Overview</h3>
+                    <h3><i class="fas fa-database"></i> Resumen de datos</h3>
                     <div id="datasetOverview">
                         </div>
                         <div style="margin-top: 20px; text-align: center;"> 
@@ -679,12 +679,12 @@
         <div id="metrics-tab" class="tab-content">
             <div class="dashboard-section">
                 <div class="dashboard-card">
-                    <h3><i class="fas fa-chart-bar"></i> Detailed Model Metrics</h3>
+                    <h3><i class="fas fa-chart-bar"></i> Métricas detalladas del modelo</h3>
                     <div id="detailedMetrics">
                         </div>
                     <div style="margin-top: 20px; text-align: center;">
                         <button class="btn btn-primary" onclick="loadModelMetrics()">
-                            <i class="fas fa-refresh"></i> Evaluate Model
+                            <i class="fas fa-refresh"></i> Evaluar modelo
                         </button>
                     </div>
                 </div>
@@ -696,7 +696,7 @@
     <div id="metricsModal" class="metrics-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Model Metrics</h2>
+                <h2 class="modal-title">Metricas del modelo</h2>
                 <span class="close" onclick="closeModal()">&times;</span>
             </div>
             <div id="metricsContent">
